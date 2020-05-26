@@ -1,7 +1,10 @@
 import React from 'react'
 import dayjs from 'dayjs'
+import styled from 'styled-components'
 import { Link } from 'react-router-dom'
-import { Page, Card, Button } from 'tabler-react'
+import {
+  Page, Card, Button, colors,
+} from 'tabler-react'
 import C3Chart from 'react-c3js'
 
 import getDistance from '../../getDistance.js'
@@ -43,26 +46,29 @@ function ActivitysPage({ activity, activities }) {
           matchedActivities.filter(({ id }) => id !== activity.id)
         }
       />
-      <C3Chart
-        data={{
-          columns: [
-            ['duration', ...activity.trkpts.slice(1).map(([,,, ms]) => new Date(ms + timezoneOffsetMs))],
-            ['speed', ...activity.speeds]
-          ],
-          x: 'duration',
-          type: 'area'
-        }}
-        point={{ show: false }}
-        legend={{ show: false }}
-        axis={{
-          x: {
-            type: 'timeseries',
-            tick: {
-              format: '%H:%M:%S'
-            }
-          }
-        }}
-      />
+      <Card>
+        <MyChart
+          data={{
+            columns: [
+              ['duration', ...activity.trkpts.slice(1).map(([,,, ms]) => new Date(ms + timezoneOffsetMs))],
+              ['speedStroke', ...activity.speeds],
+              ['speedFill', ...activity.speeds],
+            ],
+            x: 'duration',
+            type: 'line',
+            colors: {
+              speedFill: colors.purple,
+              speedStroke: 'black',
+            },
+          }}
+          point={{ show: false }}
+          legend={{ show: false }}
+          axis={{
+            y: { show: false },
+            x: { show: false, type: 'timeseries', tick: { format: '%H:%M:%S' } },
+          }}
+        />
+      </Card>
       <Card>
         <Card.Header>
           <Card.Title>Matched - Start and End Point</Card.Title>
@@ -77,3 +83,15 @@ function ActivitysPage({ activity, activities }) {
 }
 
 export default ActivitysPage
+
+const MyChart = styled(C3Chart)`
+  height: 10rem;
+  * { fill: none };
+  .c3-lines {
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .c3-lines-speedFill { stroke-width: 3; }
+  .c3-lines-speedStroke { stroke-width: 5; }
+`
