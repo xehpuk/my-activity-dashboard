@@ -1,4 +1,5 @@
 import dayjs from 'dayjs'
+import { mean } from 'lodash'
 
 import getDistance from './getDistance.js'
 
@@ -10,27 +11,21 @@ function importAll(r) {
 
 const activities = importAll(require.context('./activities', false, /\.json$/))
 
-// const dayjs = require('dayjs')
-// const requireDir = require('require-dir')
-//
-// const activities = Object.entries(requireDir('./activities'))
-//   .map(([key, val]) => ({ key, ...val }))
-//
-// const getDistance = ([lat1, lon1], [lat2, lon2]) => {
-//   function deg2rad(deg) {
-//     return deg * (Math.PI / 180)
-//   }
-//   const R = 6371 // Radius of the earth in km
-//   const dLat = deg2rad(lat2 - lat1) // deg2rad below
-//   const dLon = deg2rad(lon2 - lon1)
-//   const a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
-//     + Math.cos(deg2rad(lat1))
-//       * Math.cos(deg2rad(lat2))
-//       * Math.sin(dLon / 2)
-//       * Math.sin(dLon / 2)
-//   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-//   return R * c
-// } // Distance in km
+/**
+ * Get dem speds plz
+ * @param {Array} trkpt - puns o' trek
+ * @returns {Array} tha spedo
+ */
+const getSpeeds = (trkpt) => {
+  const { length } = trkpt
+  const speeds = Array(length - 1)
+  for (let i = 1; i < length; i++) {
+    const pt1 = trkpt[i - 1]
+    const pt2 = trkpt[i]
+    speeds[i - 1] = getDistance([pt1.lat, pt1.lon], [pt2.lat, pt2.lon]) / dayjs(pt2.time).diff(pt1.time, 'h', true)
+  }
+  return speeds
+}
 
 const mappedActivities = activities.map(({ gpx, key }) => {
   const endTime = gpx.trk.trkseg.trkpt[gpx.trk.trkseg.trkpt.length - 1].time
@@ -39,12 +34,20 @@ const mappedActivities = activities.map(({ gpx, key }) => {
     sum: (acc.sum || 0) + getDistance([acc.lat, acc.lon], [val.lat, val.lon]),
     ...val,
   })).sum
+  const speeds = getSpeeds(gpx.trk.trkseg.trkpt)
   const trkpts = gpx.trk.trkseg.trkpt.map((pt) => [
     pt.lat,
     pt.lon,
     pt.ele,
     dayjs(pt.time).diff(startTime),
   ])
+
+  const speed = distance / dayjs(endTime).diff(startTime, 'h', true)
+
+  console.log({
+    jguddas: distance / dayjs(endTime).diff(startTime, 'h', true),
+    xehpuk: mean(speeds),
+  })
 
   return ({
     id: key.replace(/^.\//, '').replace(/\.\w*$/, ''),
@@ -57,7 +60,8 @@ const mappedActivities = activities.map(({ gpx, key }) => {
     trkpts,
     startpt: trkpts[0],
     endpt: trkpts[trkpts.length - 1],
-    speed: distance / (dayjs(endTime).diff(startTime) / 3600000),
+    speed,
+    speeds,
   })
 }).sort((a, b) => dayjs(b.startTime).diff(a.startTime))
 

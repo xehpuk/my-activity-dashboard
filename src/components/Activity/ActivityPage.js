@@ -2,6 +2,7 @@ import React from 'react'
 import dayjs from 'dayjs'
 import { Link } from 'react-router-dom'
 import { Page, Card, Button } from 'tabler-react'
+import C3Chart from 'react-c3js'
 
 import getDistance from '../../getDistance.js'
 
@@ -17,6 +18,8 @@ function ActivitysPage({ activity, activities }) {
       getDistance(endpt, activity.endpt) < 0.5
       && getDistance(startpt, activity.startpt) < 0.5
     ))
+
+  const timezoneOffsetMs = new Date(0).getTimezoneOffset() * 60000
 
   return (
     <Page.Content>
@@ -39,6 +42,26 @@ function ActivitysPage({ activity, activities }) {
         matchedActivities={
           matchedActivities.filter(({ id }) => id !== activity.id)
         }
+      />
+      <C3Chart
+        data={{
+          columns: [
+            ['duration', ...activity.trkpts.slice(1).map(([,,, ms]) => new Date(ms + timezoneOffsetMs))],
+            ['speed', ...activity.speeds]
+          ],
+          x: 'duration',
+          type: 'area'
+        }}
+        point={{ show: false }}
+        legend={{ show: false }}
+        axis={{
+          x: {
+            type: 'timeseries',
+            tick: {
+              format: '%H:%M:%S'
+            }
+          }
+        }}
       />
       <Card>
         <Card.Header>
