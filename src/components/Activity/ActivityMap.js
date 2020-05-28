@@ -55,7 +55,7 @@ class Activity extends React.Component {
   componentDidUpdate(previousProps) {
     this.componentDidUpdateZoom(previousProps)
     this.componentDidUpdateTrimEnd(previousProps)
-    this.componentDidUpdateActvity(previousProps)
+    this.componentDidUpdateActivity(previousProps)
   }
 
   componentWillUnmount() {
@@ -185,7 +185,7 @@ class Activity extends React.Component {
     }
   }
 
-  componentDidUpdateActvity(previousProps) {
+  componentDidUpdateActivity(previousProps) {
     const { activity } = this.props
     if (activity.id !== previousProps.activity.id) {
       this.removeMarkersAndLines()

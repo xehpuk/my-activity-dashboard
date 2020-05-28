@@ -9,7 +9,7 @@ import C3Chart from 'react-c3js'
 
 import getDistance from '../../getDistance.js'
 
-import ActivityMapWithSlider from './ActivitMapWithSlider.js'
+import ActivityMapWithSlider from './ActivityMapWithSlider.js'
 import MatchedActivitiesTable from '../Matched/MatchedActivitiesTable.js'
 
 function ActivitysPage({ activity, activities }) {
