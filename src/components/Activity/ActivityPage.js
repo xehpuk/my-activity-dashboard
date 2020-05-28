@@ -12,7 +12,7 @@ import getDistance from '../../getDistance.js'
 import ActivityMapWithSlider from './ActivityMapWithSlider.js'
 import MatchedActivitiesTable from '../Matched/MatchedActivitiesTable.js'
 
-function ActivitysPage({ activity, activities }) {
+function ActivityPage({ activity, activities }) {
   const isRoundTrip = getDistance(activity.startpt, activity.endpt) <= 0.5
 
   const matchedActivities = isRoundTrip
@@ -82,7 +82,7 @@ function ActivitysPage({ activity, activities }) {
   )
 }
 
-export default ActivitysPage
+export default ActivityPage
 
 const MyChart = styled(C3Chart)`
   height: 10rem;

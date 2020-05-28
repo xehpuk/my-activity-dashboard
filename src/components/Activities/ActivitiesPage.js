@@ -4,7 +4,7 @@ import { Page, Grid } from 'tabler-react'
 import ActivitiesOverview from './ActivitiesOverview.js'
 import ActivitiesMonthlyCard from './ActivitiesMonthlyCard.js'
 
-function ActivitysPage({ activities, month }) {
+function ActivitiesPage({ activities, month }) {
   return (
     <Page.Content title="My Activities">
       <Grid.Row className="flex-column-reverse flex-md-row">
@@ -25,4 +25,4 @@ function ActivitysPage({ activities, month }) {
   )
 }
 
-export default ActivitysPage
+export default ActivitiesPage
