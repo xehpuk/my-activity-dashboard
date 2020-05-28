@@ -45,7 +45,7 @@ const mappedActivities = activities.map(({ gpx, key }) => {
   const speed = distance / dayjs(endTime).diff(startTime, 'h', true)
 
   console.log({
-    jguddas: distance / dayjs(endTime).diff(startTime, 'h', true),
+    jguddas: speed,
     xehpuk: mean(speeds),
   })
 
