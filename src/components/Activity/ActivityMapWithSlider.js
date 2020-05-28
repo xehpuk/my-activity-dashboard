@@ -1,8 +1,8 @@
-import React, { useState, useRef, useMemo } from 'react'
+import React, { useState } from 'react'
 import L from 'leaflet'
 import styled from 'styled-components'
 import screenfull from 'screenfull'
-import { round, maxBy } from 'lodash'
+import { round } from 'lodash'
 import {
   Card, Button, Form, colors,
 } from 'tabler-react'
@@ -11,40 +11,7 @@ import formatDuration from '../../formatDuration.js'
 
 import ActivityMap from './ActivityMap.js'
 
-function ActivityMapWithSlider({ activity, matchedActivities }) {
-  const maxActivityDurationInMinutes = useMemo(() => Math.ceil(
-    maxBy([activity].concat(matchedActivities), 'duration').duration / 60000,
-  ), [activity, matchedActivities])
-  const requestRef = useRef()
-  const matchedTimeRef = useRef()
-  const [{ playing, time }, setState] = useState({
-    time: maxActivityDurationInMinutes,
-  })
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const animate = (newTime) => {
-    if (matchedTimeRef.current !== undefined) {
-      setState((matchedState) => {
-        const deltaTime = newTime - matchedTimeRef.current
-        const nexttime = matchedState.time + deltaTime * 0.01
-        const inRange = nexttime < maxActivityDurationInMinutes
-        return (
-          matchedState.playing ? ({
-            playing: inRange,
-            time: inRange ? nexttime : maxActivityDurationInMinutes,
-          }) : matchedState
-        )
-      })
-    }
-    matchedTimeRef.current = newTime
-    requestRef.current = requestAnimationFrame(animate)
-  }
-
-  React.useEffect(() => {
-    requestRef.current = requestAnimationFrame(animate)
-    return () => cancelAnimationFrame(requestRef.current)
-  }, [animate])
-
+function ActivityMapWithSlider({ activity, matchedActivities, maxActivityDurationInMinutes, playing, time, setState }) {
   const [isFullscreen, setFullscreen] = useState(screenfull.isFullscreen)
 
   return (
@@ -85,13 +52,13 @@ function ActivityMapWithSlider({ activity, matchedActivities }) {
               className="w-9 ml-4 form-control text-center"
               onChange={(e) => {
                 const [hours, minutes, seconds] = e.target.value.split(':')
-                const nexttime = (
+                const nextTime = (
                   parseInt(hours, 10) * 60
                   + parseInt(minutes, 10)
                   + parseInt(seconds, 10) / 60
                 )
-                if (nexttime <= maxActivityDurationInMinutes) {
-                  setState({ time: nexttime })
+                if (nextTime <= maxActivityDurationInMinutes) {
+                  setState({ time: nextTime })
                 }
               }}
               onClick={() => setState((matchedState) => ({

@@ -1,5 +1,6 @@
-import React from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import dayjs from 'dayjs'
+import { maxBy } from 'lodash'
 import styled from 'styled-components'
 import { Link } from 'react-router-dom'
 import {
@@ -13,16 +14,83 @@ import ActivityMapWithSlider from './ActivityMapWithSlider.js'
 import MatchedActivitiesTable from '../Matched/MatchedActivitiesTable.js'
 
 function ActivityPage({ activity, activities }) {
-  const isRoundTrip = getDistance(activity.startpt, activity.endpt) <= 0.5
-
-  const matchedActivities = isRoundTrip
+  const matchedActivities = useMemo(() => getDistance(activity.startpt, activity.endpt) <= 0.5
     ? [activity]
     : activities.filter(({ startpt, endpt }) => (
       getDistance(endpt, activity.endpt) < 0.5
       && getDistance(startpt, activity.startpt) < 0.5
-    ))
+    )), [activity, activities])
+  const maxActivityDurationInMinutes = useMemo(() => Math.ceil(
+    maxBy([activity].concat(matchedActivities), 'duration').duration / 60000,
+  ), [activity, matchedActivities])
+
+  const requestRef = useRef()
+  const matchedTimeRef = useRef()
+  const chartRef = useRef()
+
+  const [{ playing, time }, setState] = useState({
+    time: maxActivityDurationInMinutes,
+  })
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const animate = (newTime) => {
+    if (matchedTimeRef.current !== undefined) {
+      setState((matchedState) => {
+        const deltaTime = newTime - matchedTimeRef.current
+        const nextTime = matchedState.time + deltaTime * 0.01
+        const inRange = nextTime < maxActivityDurationInMinutes
+        return (
+          matchedState.playing ? ({
+            playing: inRange,
+            time: inRange ? nextTime : maxActivityDurationInMinutes,
+          }) : matchedState
+        )
+      })
+    }
+    matchedTimeRef.current = newTime
+    requestRef.current = requestAnimationFrame(animate)
+  }
+
+  useEffect(() => {
+    requestRef.current = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(requestRef.current)
+  }, [animate])
 
   const timezoneOffsetMs = new Date(0).getTimezoneOffset() * 60000
+
+  const chartElement = useMemo(() => (
+    <MyChart
+      ref={chartRef}
+      data={{
+        columns: [
+          ['duration', ...activity.trkpts.slice(1).map(([,,, ms]) => new Date(ms + timezoneOffsetMs))],
+          ['speedStroke', ...activity.speeds],
+          ['speedFill', ...activity.speeds],
+        ],
+        x: 'duration',
+        type: 'line',
+        colors: {
+          speedFill: colors.purple,
+          speedStroke: 'black',
+        },
+      }}
+      point={{ show: false }}
+      legend={{ show: false }}
+      axis={{
+        y: { show: false },
+        x: { show: false, type: 'timeseries', tick: { format: '%H:%M:%S' } },
+      }}
+    />
+  ), [activity, timezoneOffsetMs])
+
+  useEffect(() => {
+    if (chartRef.current) {
+      // performance killer 👌
+      chartRef.current.chart.xgrids([
+        { value: new Date(1000 * 60 * time + timezoneOffsetMs) },
+      ])
+    }
+  }, [time, timezoneOffsetMs])
 
   return (
     <Page.Content>
@@ -45,29 +113,13 @@ function ActivityPage({ activity, activities }) {
         matchedActivities={
           matchedActivities.filter(({ id }) => id !== activity.id)
         }
+        maxActivityDurationInMinutes={maxActivityDurationInMinutes}
+        playing={playing}
+        time={time}
+        setState={setState}
       />
       <Card>
-        <MyChart
-          data={{
-            columns: [
-              ['duration', ...activity.trkpts.slice(1).map(([,,, ms]) => new Date(ms + timezoneOffsetMs))],
-              ['speedStroke', ...activity.speeds],
-              ['speedFill', ...activity.speeds],
-            ],
-            x: 'duration',
-            type: 'line',
-            colors: {
-              speedFill: colors.purple,
-              speedStroke: 'black',
-            },
-          }}
-          point={{ show: false }}
-          legend={{ show: false }}
-          axis={{
-            y: { show: false },
-            x: { show: false, type: 'timeseries', tick: { format: '%H:%M:%S' } },
-          }}
-        />
+        {chartElement}
       </Card>
       <Card>
         <Card.Header>
@@ -94,4 +146,5 @@ const MyChart = styled(C3Chart)`
   }
   .c3-lines-speedFill { stroke-width: 3; }
   .c3-lines-speedStroke { stroke-width: 5; }
+  .c3-grid-lines { stroke: black; }
 `
